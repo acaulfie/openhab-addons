@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2021 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -96,7 +96,7 @@ public class ComponentChannel {
 
     public CompletableFuture<@Nullable Void> start(MqttBrokerConnection connection, ScheduledExecutorService scheduler,
             int timeout) {
-        // Make sure we set the callback again which might have been nulled during an stop
+        // Make sure we set the callback again which might have been nulled during a stop
         channelState.setChannelStateUpdateListener(this.channelStateUpdateListener);
 
         return channelState.start(connection, scheduler, timeout);
@@ -129,11 +129,14 @@ public class ComponentChannel {
         private @Nullable String commandTopic;
         private boolean retain;
         private boolean trigger;
+        private boolean isAdvanced;
         private @Nullable Integer qos;
         private @Nullable Predicate<Command> commandFilter;
 
         private @Nullable String templateIn;
         private @Nullable String templateOut;
+
+        private String format = "%s";
 
         public Builder(AbstractComponent<?> component, String channelID, Value valueState, String label,
                 ChannelStateUpdateListener channelStateUpdateListener) {
@@ -141,6 +144,7 @@ public class ComponentChannel {
             this.channelID = channelID;
             this.valueState = valueState;
             this.label = label;
+            this.isAdvanced = false;
             this.channelStateUpdateListener = channelStateUpdateListener;
         }
 
@@ -194,8 +198,18 @@ public class ComponentChannel {
             return this;
         }
 
+        public Builder isAdvanced(boolean advanced) {
+            this.isAdvanced = advanced;
+            return this;
+        }
+
         public Builder commandFilter(@Nullable Predicate<Command> commandFilter) {
             this.commandFilter = commandFilter;
+            return this;
+        }
+
+        public Builder withFormat(String format) {
+            this.format = format;
             return this;
         }
 
@@ -215,18 +229,23 @@ public class ComponentChannel {
                     channelUID.getGroupId() + "_" + channelID);
             channelState = new HomeAssistantChannelState(
                     ChannelConfigBuilder.create().withRetain(retain).withQos(qos).withStateTopic(stateTopic)
-                            .withCommandTopic(commandTopic).makeTrigger(trigger).build(),
+                            .withCommandTopic(commandTopic).makeTrigger(trigger).withFormatter(format).build(),
                     channelUID, valueState, channelStateUpdateListener, commandFilter);
 
-            String localStateTopic = stateTopic;
-            if (localStateTopic == null || localStateTopic.isBlank() || this.trigger) {
+            // disabled by default components should always show up as advanced
+            if (!component.isEnabledByDefault()) {
+                isAdvanced = true;
+            }
+
+            if (this.trigger) {
                 type = ChannelTypeBuilder.trigger(channelTypeUID, label)
-                        .withConfigDescriptionURI(URI.create(MqttBindingConstants.CONFIG_HA_CHANNEL)).build();
+                        .withConfigDescriptionURI(URI.create(MqttBindingConstants.CONFIG_HA_CHANNEL))
+                        .isAdvanced(isAdvanced).build();
             } else {
                 StateDescriptionFragment description = valueState.createStateDescription(commandTopic == null).build();
                 type = ChannelTypeBuilder.state(channelTypeUID, label, channelState.getItemType())
                         .withConfigDescriptionURI(URI.create(MqttBindingConstants.CONFIG_HA_CHANNEL))
-                        .withStateDescriptionFragment(description).build();
+                        .withStateDescriptionFragment(description).isAdvanced(isAdvanced).build();
             }
 
             Configuration configuration = new Configuration();

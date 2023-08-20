@@ -22,6 +22,7 @@
 			<channel id="phase" typeId="phase"/>
 			<channel id="rawPhase" typeId="rawPhase"/>
 			<channel id="start" typeId="start"/>
+			<channel id="end" typeId="end"/>
 			<channel id="duration" typeId="duration"/>
 			<channel id="elapsed" typeId="elapsed"/>
 			<channel id="finish" typeId="finish"/>
@@ -29,7 +30,7 @@
 			<channel id="switch" typeId="switch"/>
 			<channel id="target" typeId="targetTemperature">
 				<label>Temperature</label>
-				<description>Temperature of the selected program</description>
+				<description>Temperature of the selected program (10 °C = cold)</description>
 			</channel>
 			<channel id="spinningspeed" typeId="spinningspeed"/>
 			<channel id="powerConsumption" typeId="powerConsumption"/>

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2021 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -30,13 +30,13 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.openhab.binding.onkyo.internal.OnkyoAlbumArt;
 import org.openhab.binding.onkyo.internal.OnkyoConnection;
 import org.openhab.binding.onkyo.internal.OnkyoEventListener;
+import org.openhab.binding.onkyo.internal.OnkyoParserHelper;
 import org.openhab.binding.onkyo.internal.OnkyoStateDescriptionProvider;
 import org.openhab.binding.onkyo.internal.ServiceType;
 import org.openhab.binding.onkyo.internal.automation.modules.OnkyoThingActions;
 import org.openhab.binding.onkyo.internal.config.OnkyoDeviceConfiguration;
 import org.openhab.binding.onkyo.internal.eiscp.EiscpCommand;
 import org.openhab.binding.onkyo.internal.eiscp.EiscpMessage;
-import org.openhab.core.audio.AudioHTTPServer;
 import org.openhab.core.io.net.http.HttpUtil;
 import org.openhab.core.io.transport.upnp.UpnpIOService;
 import org.openhab.core.library.types.DecimalType;
@@ -76,7 +76,7 @@ import org.xml.sax.SAXException;
  * @author Pauli Anttila - lot of refactoring
  * @author Stewart Cossey - add dynamic state description provider
  */
-public class OnkyoHandler extends UpnpAudioSinkHandler implements OnkyoEventListener {
+public class OnkyoHandler extends OnkyoUpnpHandler implements OnkyoEventListener {
 
     private final Logger logger = LoggerFactory.getLogger(OnkyoHandler.class);
 
@@ -97,9 +97,9 @@ public class OnkyoHandler extends UpnpAudioSinkHandler implements OnkyoEventList
 
     private static final int NET_USB_ID = 43;
 
-    public OnkyoHandler(Thing thing, UpnpIOService upnpIOService, AudioHTTPServer audioHTTPServer, String callbackUrl,
+    public OnkyoHandler(Thing thing, UpnpIOService upnpIOService,
             OnkyoStateDescriptionProvider stateDescriptionProvider) {
-        super(thing, upnpIOService, audioHTTPServer, callbackUrl);
+        super(thing, upnpIOService);
         this.stateDescriptionProvider = stateDescriptionProvider;
     }
 
@@ -120,9 +120,7 @@ public class OnkyoHandler extends UpnpAudioSinkHandler implements OnkyoEventList
             connection.openConnection();
             if (connection.isConnected()) {
                 updateStatus(ThingStatus.ONLINE);
-
-                sendCommand(EiscpCommand.INFO_QUERY);
-                sendCommand(EiscpCommand.AUDIOINFO_QUERY);
+                checkStatus();
             }
         });
 
@@ -330,6 +328,22 @@ public class OnkyoHandler extends UpnpAudioSinkHandler implements OnkyoEventList
                     sendCommand(EiscpCommand.AUDIOINFO_QUERY);
                 }
                 break;
+
+            /*
+             * MEDIA INFO
+             */
+            case CHANNEL_AUDIO_IN_INFO:
+            case CHANNEL_AUDIO_OUT_INFO:
+                if (command.equals(RefreshType.REFRESH)) {
+                    sendCommand(EiscpCommand.AUDIOINFO_QUERY);
+                }
+                break;
+            case CHANNEL_VIDEO_IN_INFO:
+            case CHANNEL_VIDEO_OUT_INFO:
+                if (command.equals(RefreshType.REFRESH)) {
+                    sendCommand(EiscpCommand.VIDEOINFO_QUERY);
+                }
+                break;
             /*
              * MISC
              */
@@ -485,6 +499,12 @@ public class OnkyoHandler extends UpnpAudioSinkHandler implements OnkyoEventList
                 case AUDIOINFO:
                     updateState(CHANNEL_AUDIOINFO, convertDeviceValueToOpenHabState(data.getValue(), StringType.class));
                     logger.debug("audioinfo message: '{}'", data.getValue());
+                    updateState(CHANNEL_AUDIO_IN_INFO, OnkyoParserHelper.infoBuilder(data.getValue(), 0, 2));
+                    updateState(CHANNEL_AUDIO_OUT_INFO, OnkyoParserHelper.infoBuilder(data.getValue(), 3, 5));
+                    break;
+                case VIDEOINFO:
+                    updateState(CHANNEL_VIDEO_IN_INFO, OnkyoParserHelper.infoBuilder(data.getValue(), 0, 3));
+                    updateState(CHANNEL_VIDEO_OUT_INFO, OnkyoParserHelper.infoBuilder(data.getValue(), 4, 7));
                     break;
                 case INFO:
                     processInfo(data.getValue());
@@ -806,6 +826,7 @@ public class OnkyoHandler extends UpnpAudioSinkHandler implements OnkyoEventList
             sendCommand(EiscpCommand.LISTEN_MODE_QUERY);
             sendCommand(EiscpCommand.INFO_QUERY);
             sendCommand(EiscpCommand.AUDIOINFO_QUERY);
+            sendCommand(EiscpCommand.VIDEOINFO_QUERY);
 
             if (isChannelAvailable(CHANNEL_POWERZONE2)) {
                 sendCommand(EiscpCommand.ZONE2_POWER_QUERY);
@@ -899,7 +920,6 @@ public class OnkyoHandler extends UpnpAudioSinkHandler implements OnkyoEventList
         return new PercentType(((Double) (volume.intValue() / configuration.volumeScale)).intValue());
     }
 
-    @Override
     public PercentType getVolume() throws IOException {
         if (volumeLevelZone1 instanceof PercentType) {
             return (PercentType) volumeLevelZone1;
@@ -908,7 +928,6 @@ public class OnkyoHandler extends UpnpAudioSinkHandler implements OnkyoEventList
         throw new IOException();
     }
 
-    @Override
     public void setVolume(PercentType volume) throws IOException {
         handleVolumeSet(EiscpCommand.Zone.ZONE1, volumeLevelZone1, downScaleVolume(volume));
     }
