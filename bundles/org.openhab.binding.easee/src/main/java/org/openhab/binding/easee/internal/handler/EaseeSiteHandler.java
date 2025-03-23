@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -15,9 +15,9 @@ package org.openhab.binding.easee.internal.handler;
 import static org.openhab.binding.easee.internal.EaseeBindingConstants.*;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -181,7 +181,7 @@ public class EaseeSiteHandler extends BaseBridgeHandler implements EaseeBridgeHa
 
     @Override
     public Collection<Class<? extends ThingHandlerService>> getServices() {
-        return Collections.singleton(EaseeSiteDiscoveryService.class);
+        return Set.of(EaseeSiteDiscoveryService.class);
     }
 
     public void setDiscoveryService(EaseeSiteDiscoveryService discoveryService) {

@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -274,7 +274,7 @@ public class JRubyScriptEngineConfiguration {
     /**
      * Configure the optional elements of the Ruby Environment
      * 
-     * @param engine Engine in which to configure environment
+     * @param scriptEngine Engine in which to configure environment
      */
     public void configureRubyEnvironment(ScriptEngine scriptEngine) {
         getConfigurationElements(OptionalConfigurationElement.Type.RUBY_ENVIRONMENT).forEach(configElement -> {
@@ -300,6 +300,7 @@ public class JRubyScriptEngineConfiguration {
         });
 
         configureRubyLib(scriptEngine);
+        disallowExec(scriptEngine);
     }
 
     /**
@@ -319,6 +320,24 @@ public class JRubyScriptEngineConfiguration {
             } catch (ScriptException exception) {
                 logger.warn("Error setting $LOAD_PATH from RUBYLIB='{}'", rubyLib, unwrap(exception));
             }
+        }
+    }
+
+    private void disallowExec(ScriptEngine engine) {
+        try {
+            engine.eval("""
+                      def Process.exec(*)
+                        raise NotImplementedError, "You cannot call `exec` from within openHAB"
+                      end
+
+                      module Kernel
+                        module_function def exec(*)
+                          raise NotImplementedError, "You cannot call `exec` from within openHAB"
+                        end
+                      end
+                    """);
+        } catch (ScriptException exception) {
+            logger.warn("Error preventing exec", unwrap(exception));
         }
     }
 
@@ -379,7 +398,7 @@ public class JRubyScriptEngineConfiguration {
         private final String defaultValue;
         private final Optional<String> mappedTo;
         private final Type type;
-        private Optional<String> value;
+        private @Nullable String value;
 
         private OptionalConfigurationElement(String defaultValue) {
             this(Type.OTHER, defaultValue, null);
@@ -389,19 +408,19 @@ public class JRubyScriptEngineConfiguration {
             this.type = type;
             this.defaultValue = defaultValue;
             this.mappedTo = Optional.ofNullable(mappedTo);
-            value = Optional.empty();
         }
 
         private String getValue() {
-            return value.orElse(defaultValue);
+            String value = this.value;
+            return value != null ? value : this.defaultValue;
         }
 
-        private void setValue(String value) {
-            this.value = Optional.of(value);
+        private void setValue(@Nullable String value) {
+            this.value = value;
         }
 
         private void clearValue() {
-            this.value = Optional.empty();
+            this.value = null;
         }
 
         private Optional<String> mappedTo() {

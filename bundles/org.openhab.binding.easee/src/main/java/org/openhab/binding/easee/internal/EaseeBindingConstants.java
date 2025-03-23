@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -122,8 +122,6 @@ public class EaseeBindingConstants {
     public static final String CMD_VAL_RESUME_CHARGING = "resume_charging";
 
     // web request constants
-    public static final long WEB_REQUEST_INITIAL_DELAY = 30;
-    public static final long WEB_REQUEST_INTERVAL = 5;
     public static final int WEB_REQUEST_QUEUE_MAX_SIZE = 20;
     public static final int WEB_REQUEST_TOKEN_EXPIRY_BUFFER_MINUTES = 5;
     public static final int WEB_REQUEST_TOKEN_MAX_AGE_MINUTES = 60;
@@ -156,9 +154,6 @@ public class EaseeBindingConstants {
 
     public static final String GENERIC_YES = "Yes";
     public static final String GENERIC_NO = "No";
-    public static final int CHARGER_OP_STATE_WAITING = 2;
-    public static final int CHARGER_OP_STATE_CHARGING = 3;
-    public static final int CHARGER_OP_STATE_NOT_AUTHENTICATED = 7;
     public static final double CHARGER_DYNAMIC_CURRENT_PAUSE = 0;
     public static final int CHARGER_REASON_FOR_NO_CURRENT_CIRCUIT_LIMIT = 2;
     public static final int CHARGER_REASON_FOR_NO_CURRENT_CHARGER_LIMIT = 52;
@@ -171,7 +166,7 @@ public class EaseeBindingConstants {
     public static final String THING_CONFIG_BACK_PLATE_ID = "backPlateId";
     public static final String THING_CONFIG_MASTER_BACK_PLATE_ID = "masterBackPlateId";
 
-    public static final Instant OUTDATED_DATE = Instant.MIN;
+    public static final Instant OUTDATED_DATE = Instant.EPOCH;
     public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     public static final String PARAMETER_NAME_WRITE_COMMAND = "writeCommand";

@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -31,6 +31,7 @@ import org.openhab.binding.easee.internal.Utils;
 import org.openhab.binding.easee.internal.command.EaseeCommand;
 import org.openhab.binding.easee.internal.command.account.Login;
 import org.openhab.binding.easee.internal.command.account.RefreshToken;
+import org.openhab.binding.easee.internal.config.EaseeConfiguration;
 import org.openhab.binding.easee.internal.handler.EaseeBridgeHandler;
 import org.openhab.binding.easee.internal.handler.StatusHandler;
 import org.openhab.binding.easee.internal.model.ValidationException;
@@ -149,8 +150,8 @@ public class WebInterface implements AtomicReferenceTrait {
                         tokenRefreshDate = Instant.now();
                         tokenExpiry = tokenRefreshDate.plusSeconds(expiresInSeconds);
 
-                        logger.debug("access token refreshed: {}, expiry: {}", Utils.formatDate(tokenRefreshDate),
-                                Utils.formatDate(tokenExpiry));
+                        logger.debug("access token refreshed: {}, expiry: {}", tokenRefreshDate.toString(),
+                                tokenExpiry.toString());
 
                         bridgeStatusHandler.updateStatusInfo(ThingStatus.ONLINE, ThingStatusDetail.NONE,
                                 STATUS_TOKEN_VALIDATED);
@@ -226,7 +227,7 @@ public class WebInterface implements AtomicReferenceTrait {
             if (now.plus(WEB_REQUEST_TOKEN_EXPIRY_BUFFER_MINUTES, ChronoUnit.MINUTES).isAfter(tokenExpiry)
                     || now.isAfter(tokenRefreshDate.plus(WEB_REQUEST_TOKEN_MAX_AGE_MINUTES, ChronoUnit.MINUTES))) {
                 logger.debug("access token needs to be refreshed, last refresh: {}, expiry: {}",
-                        Utils.formatDate(tokenRefreshDate), Utils.formatDate(tokenExpiry));
+                        tokenRefreshDate.toString(), tokenExpiry.toString());
 
                 EaseeCommand refreshCommand = new RefreshToken(handler, accessToken, refreshToken,
                         this::processAuthenticationResult);
@@ -253,8 +254,6 @@ public class WebInterface implements AtomicReferenceTrait {
 
     /**
      * Constructor to set up interface
-     *
-     * @param config Bridge configuration
      */
     public WebInterface(ScheduledExecutorService scheduler, EaseeBridgeHandler handler, HttpClient httpClient,
             StatusHandler bridgeStatusHandler) {
@@ -271,9 +270,10 @@ public class WebInterface implements AtomicReferenceTrait {
     }
 
     public void start() {
+        EaseeConfiguration config = handler.getBridgeConfiguration();
         setAuthenticated(false);
         updateJobReference(requestExecutorJobReference, scheduler.scheduleWithFixedDelay(requestExecutor,
-                WEB_REQUEST_INITIAL_DELAY, WEB_REQUEST_INTERVAL, TimeUnit.SECONDS));
+                config.getWebRequestInitialDelay(), config.getWebRequestInterval(), TimeUnit.SECONDS));
     }
 
     /**

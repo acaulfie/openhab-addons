@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.time.DateTimeException;
-import java.time.ZoneId;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 
 import javax.measure.quantity.Dimensionless;
@@ -27,6 +27,7 @@ import javax.measure.quantity.Frequency;
 import javax.measure.quantity.Temperature;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.core.i18n.TimeZoneProvider;
 import org.openhab.core.library.types.DateTimeType;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
@@ -50,9 +51,11 @@ import org.openhab.core.types.Command;
 public class DanfossAirUnit {
 
     private final CommunicationController communicationController;
+    private final TimeZoneProvider timeZoneProvider;
 
-    public DanfossAirUnit(CommunicationController communicationController) {
+    public DanfossAirUnit(CommunicationController communicationController, TimeZoneProvider timeZoneProvider) {
         this.communicationController = communicationController;
+        this.timeZoneProvider = timeZoneProvider;
     }
 
     private boolean getBoolean(byte[] operation, byte[] register) throws IOException {
@@ -94,13 +97,13 @@ public class DanfossAirUnit {
         return temp;
     }
 
-    private ZonedDateTime getTimestamp(byte[] operation, byte[] register)
+    private Instant getTimestamp(byte[] operation, byte[] register)
             throws IOException, UnexpectedResponseValueException {
         byte[] result = communicationController.sendRobustRequest(operation, register);
-        return asZonedDateTime(result);
+        return asInstant(result);
     }
 
-    private ZonedDateTime asZonedDateTime(byte[] data) throws UnexpectedResponseValueException {
+    private Instant asInstant(byte[] data) throws UnexpectedResponseValueException {
         int second = data[0];
         int minute = data[1];
         int hour = data[2] & 0x1f;
@@ -108,7 +111,8 @@ public class DanfossAirUnit {
         int month = data[4];
         int year = data[5] + 2000;
         try {
-            return ZonedDateTime.of(year, month, day, hour, minute, second, 0, ZoneId.systemDefault());
+            return ZonedDateTime.of(year, month, day, hour, minute, second, 0, timeZoneProvider.getTimeZone())
+                    .toInstant();
         } catch (DateTimeException e) {
             String msg = String.format("Ignoring invalid timestamp %s.%s.%s %s:%s:%s", day, month, year, hour, minute,
                     second);
@@ -162,15 +166,19 @@ public class DanfossAirUnit {
     }
 
     public OnOffType getBoost() throws IOException {
-        return getBoolean(REGISTER_1_READ, BOOST) ? OnOffType.ON : OnOffType.OFF;
+        return OnOffType.from(getBoolean(REGISTER_1_READ, BOOST));
     }
 
     public OnOffType getNightCooling() throws IOException {
-        return getBoolean(REGISTER_1_READ, NIGHT_COOLING) ? OnOffType.ON : OnOffType.OFF;
+        return OnOffType.from(getBoolean(REGISTER_1_READ, NIGHT_COOLING));
+    }
+
+    public OnOffType getDefrostStatus() throws IOException {
+        return OnOffType.from(getBoolean(REGISTER_1_READ, DEFROST_STATUS));
     }
 
     public OnOffType getBypass() throws IOException {
-        return getBoolean(REGISTER_1_READ, BYPASS) ? OnOffType.ON : OnOffType.OFF;
+        return OnOffType.from(getBoolean(REGISTER_1_READ, BYPASS));
     }
 
     public QuantityType<Dimensionless> getHumidity() throws IOException {
@@ -227,7 +235,7 @@ public class DanfossAirUnit {
     }
 
     public DateTimeType getCurrentTime() throws IOException, UnexpectedResponseValueException {
-        ZonedDateTime timestamp = getTimestamp(REGISTER_1_READ, CURRENT_TIME);
+        Instant timestamp = getTimestamp(REGISTER_1_READ, CURRENT_TIME);
         return new DateTimeType(timestamp);
     }
 
@@ -236,16 +244,16 @@ public class DanfossAirUnit {
     }
 
     private DecimalType setNumberTypeRegister(Command cmd, byte[] register) throws IOException {
-        if (cmd instanceof DecimalType) {
-            byte value = (byte) ((DecimalType) cmd).intValue();
+        if (cmd instanceof DecimalType decimalCommand) {
+            byte value = (byte) decimalCommand.intValue();
             set(REGISTER_1_WRITE, register, value);
         }
         return new DecimalType(BigDecimal.valueOf(getByte(REGISTER_1_READ, register)));
     }
 
     private PercentType setPercentTypeRegister(Command cmd, byte[] register) throws IOException {
-        if (cmd instanceof PercentType) {
-            byte value = (byte) ((((PercentType) cmd).intValue() + 5) / 10);
+        if (cmd instanceof PercentType percentCommand) {
+            byte value = (byte) ((percentCommand.intValue() + 5) / 10);
             set(REGISTER_1_WRITE, register, value);
         }
         return new PercentType(BigDecimal.valueOf(getByte(REGISTER_1_READ, register) * 10));
@@ -255,7 +263,7 @@ public class DanfossAirUnit {
         if (cmd instanceof OnOffType) {
             set(REGISTER_1_WRITE, register, OnOffType.ON.equals(cmd) ? (byte) 1 : (byte) 0);
         }
-        return getBoolean(REGISTER_1_READ, register) ? OnOffType.ON : OnOffType.OFF;
+        return OnOffType.from(getBoolean(REGISTER_1_READ, register));
     }
 
     private StringType setStringTypeRegister(Command cmd, byte[] register) throws IOException {

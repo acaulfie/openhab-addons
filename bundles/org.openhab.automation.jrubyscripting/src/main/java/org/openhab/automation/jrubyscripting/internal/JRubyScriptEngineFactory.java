@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -123,8 +123,8 @@ public class JRubyScriptEngineFactory extends AbstractScriptEngineFactory {
         importClassesToRuby(scriptEngine, partitionedMap.getOrDefault(true, new HashMap<>()));
 
         Object scriptExtension = scopeValues.get("scriptExtension");
-        if (scriptExtension instanceof ScriptExtensionManagerWrapper && configuration.enableDependencyTracking()) {
-            ScriptExtensionManagerWrapper wrapper = (ScriptExtensionManagerWrapper) scriptExtension;
+        if (scriptExtension instanceof ScriptExtensionManagerWrapper wrapper
+                && configuration.enableDependencyTracking()) {
             // we inject like this instead of using the script context, because
             // this is executed _before_ the dependency tracker is added to the script
             // context.
@@ -160,7 +160,7 @@ public class JRubyScriptEngineFactory extends AbstractScriptEngineFactory {
         }
         ScriptEngine engine = factory.getScriptEngine();
         configuration.configureRubyEnvironment(engine);
-        return engine;
+        return new JRubyEngineWrapper((org.jruby.embed.jsr223.JRubyEngine) engine);
     }
 
     @Override
