@@ -113,8 +113,11 @@ public class IsyDeviceHandler extends AbtractIsyThingHandler {
         try {
             if (command instanceof RefreshType) {
                 try {
-                    String isyAddress = NodeAddress
-                            .parseAddressString(config.address, getDeviceIdForChannel(channelUID.getId())).toString();
+
+                    String isyAddress;
+                        isyAddress = NodeAddress
+                                .parseAddressString(config.address, getDeviceIdForChannel(channelUID.getId()))
+                                .toString();
                     logger.debug("insteon address for command is: {}", isyAddress);
                     OHIsyClient insteonClient = bridgeHandler.getInsteonClient();
                     if (insteonClient != null) {

@@ -58,6 +58,9 @@ import org.slf4j.LoggerFactory;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
+import com.thoughtworks.xstream.security.NoTypePermission;
+import com.thoughtworks.xstream.security.NullPermission;
+import com.thoughtworks.xstream.security.PrimitiveTypePermission;
 
 public class IsyBridgeHandler extends BaseBridgeHandler implements InsteonClientProvider {
     private String testXmlVariableUpdate = "<?xml version=\"1.0\"?><Event seqnum=\"1607\" sid=\"uuid:74\"><control>_1</control><action>6</action><node></node><eventInfo><var type=\"2\" id=\"3\"><val>0</val><ts>20170718 09:16:26</ts></var></eventInfo></Event>";
@@ -84,6 +87,10 @@ public class IsyBridgeHandler extends BaseBridgeHandler implements InsteonClient
         this.client = client;
         xStream = new XStream(new StaxDriver());
         xStream.ignoreUnknownElements();
+        xStream.addPermission(NoTypePermission.NONE); // forbid everything
+        xStream.addPermission(NullPermission.NULL); // allow "null"
+        xStream.addPermission(PrimitiveTypePermission.PRIMITIVES); // allow primitive types
+        xStream.allowTypesByWildcard(new String[] { "org.openhab.binding.isy.internal.protocol.**" });
         xStream.setClassLoader(IsyRestDiscoveryService.class.getClassLoader());
         xStream.processAnnotations(new Class[] { Properties.class, Property.class, Event.class, EventInfo.class,
                 EventNode.class, ZoneEvent.class, AreaEvent.class, VariableList.class, StateVariable.class,

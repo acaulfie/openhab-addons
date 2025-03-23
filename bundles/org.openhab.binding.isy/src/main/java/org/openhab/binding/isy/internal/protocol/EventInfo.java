@@ -32,6 +32,9 @@ public class EventInfo {
     @XStreamAlias("ze")
     private ZoneEvent zoneEvent;
 
+    @XStreamAlias("status")
+    private String status;
+
     public AreaEvent getAreaEvent() {
         return areaEvent;
     }
@@ -64,6 +67,10 @@ public class EventInfo {
         return zoneEvent;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     public void setAreaEvent(AreaEvent areaEvent) {
         this.areaEvent = areaEvent;
     }
@@ -94,5 +101,9 @@ public class EventInfo {
 
     public void setZoneEvent(ZoneEvent zoneEvent) {
         this.zoneEvent = zoneEvent;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
