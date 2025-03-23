@@ -83,9 +83,6 @@ public class IsyBridgeHandler extends BaseBridgeHandler implements InsteonClient
         super(bridge);
         this.client = client;
         xStream = new XStream(new StaxDriver());
-        xStream.allowTypesByWildcard(new String[] { IsyBridgeHandler.class.getPackage().getName() + ".*",
-                org.openhab.binding.isy.internal.protocol.Node.class.getPackage().getName() + ".*",
-                org.openhab.binding.isy.internal.protocol.elk.Area.class.getPackage().getName() + ".*", });
         xStream.ignoreUnknownElements();
         xStream.setClassLoader(IsyRestDiscoveryService.class.getClassLoader());
         xStream.processAnnotations(new Class[] { Properties.class, Property.class, Event.class, EventInfo.class,

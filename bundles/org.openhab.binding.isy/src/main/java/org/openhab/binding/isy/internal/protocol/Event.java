@@ -10,10 +10,6 @@ public class Event {
     @XStreamAsAttribute
     private Integer sequenceNumber;
 
-    @XStreamAlias("sid")
-    @XStreamAsAttribute
-    private String sid;
-
     @XStreamAlias("control")
     private String control;
 
@@ -64,13 +60,5 @@ public class Event {
 
     public void setEventInfo(EventInfo eventInfo) {
         this.eventInfo = eventInfo;
-    }
-
-    public String getSid() {
-        return sid;
-    }
-
-    public void setSid(String sid) {
-        this.sid = sid;
     }
 }
