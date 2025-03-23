@@ -7,8 +7,9 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketListener;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
+import org.openhab.binding.isy.internal.protocol.Event;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.events.Event;
 
 import com.thoughtworks.xstream.XStream;
 
