@@ -108,7 +108,6 @@ public class IsyWebSocketSubscription {
             messageObj = xStream.fromXML(message);
         } catch (Exception e) {
             logger.error("Error parsing message [{}]", message);
-            logger.error(e.getMessage());
             return;
         }
         if (messageObj instanceof Event) {
